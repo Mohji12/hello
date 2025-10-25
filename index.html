@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>I love you Zahira — 3D × 100</title>
+  <style>
+    :root{
+      --count: 100;
+      --base-size: clamp(18px, 2.4vmin, 28px);
+      --scene-depth: 1200px;
+      --palette-1: 255, 102, 131;    /* pink */
+      --palette-2: 255, 200, 120;    /* warm */
+      --palette-3: 255, 255, 255;    /* light */
+    }
+
+    html,body{
+      height:100%;
+      margin:0;
+      background: radial-gradient(1200px 700px at 10% 20%, rgba(255,90,120,0.07), transparent 10%),
+                  radial-gradient(900px 500px at 90% 80%, rgba(255,200,120,0.04), transparent 10%),
+                  linear-gradient(180deg,#0b0320 0%, #1a072a 50%, #07040a 100%);
+      font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      color: #fff;
+      overflow:hidden;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:2rem;
+    }
+
+    /* Scene */
+    .scene {
+      width: min(1200px, 96vw);
+      height: min(700px, 88vh);
+      perspective: 1400px;
+      perspective-origin: 50% 40%;
+      position:relative;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+    /* The ring that holds all phrases */
+    .ring {
+      width:100%;
+      height:100%;
+      transform-style: preserve-3d;
+      position:relative;
+      transition: transform 400ms ease;
+    }
+
+    /* Each phrase */
+    .phrase {
+      --z: 0px;
+      position:absolute;
+      left:50%;
+      top:50%;
+      transform-style: preserve-3d;
+      transform-origin: center;
+      white-space:nowrap;
+      font-weight:700;
+      font-size:var(--base-size);
+      letter-spacing:0.02em;
+      text-transform:none;
+      line-height:1;
+      user-select:none;
+      pointer-events:none;
+      will-change: transform, opacity;
+      filter: drop-shadow(0 10px 24px rgba(0,0,0,0.45));
+      /* 3D shading using text-shadow layered */
+      text-shadow:
+        0 1px 0 rgba(0,0,0,0.35),
+        0 6px 18px rgba(0,0,0,0.45);
+      animation:
+        float calc(6s + var(--rand) * 6s) ease-in-out infinite,
+        spin calc(18s + var(--rand) * 18s) linear infinite;
+      animation-delay: calc(var(--i) * -0.06s);
+      opacity:0;
+    }
+
+    /* Front face style (color gradient) */
+    .phrase .face {
+      display:inline-block;
+      transform: translateZ(18px);
+      padding: .28em .5em;
+      border-radius: .36em;
+      background: linear-gradient(90deg,
+        rgba(var(--palette-1),0.98) 0%,
+        rgba(var(--palette-2),0.96) 50%,
+        rgba(255,255,255,0.06) 100%);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.5), inset 0 -6px 24px rgba(255,255,255,0.04);
+      transform-origin: center;
+      backface-visibility:hidden;
+    }
+
+    /* Back face (subtle darker layer) for depth */
+    .phrase .back {
+      content:"";
+      position:absolute;
+      left:0;
+      top:0;
+      transform: translateZ(-6px) rotateX(180deg);
+      padding: .28em .5em;
+      border-radius:.36em;
+      opacity:0.85;
+      filter: blur(.2px);
+      background: linear-gradient(180deg, rgba(10,3,12,0.85), rgba(30,10,20,0.6));
+    }
+
+    /* heart badge removed */
+
+    /* Entrance reveal */
+    .phrase.show {
+      opacity:1;
+      transition: opacity 600ms cubic-bezier(.2,.9,.2,1);
+    }
+
+    /* Animations */
+    @keyframes float{
+      0% { transform: translate3d(var(--tx), var(--ty), calc(var(--z) * 1px)) rotateX(calc(var(--rx) * 1turn)) rotateY(calc(var(--ry) * 1turn)); }
+      50% { transform: translate3d(calc(var(--tx) + var(--sx)), calc(var(--ty) + var(--sy)), calc(var(--z) * 1px + var(--sz))) rotateX(calc(var(--rx) * 1turn + .02turn)) rotateY(calc(var(--ry) * 1turn + .01turn)); }
+      100% { transform: translate3d(var(--tx), var(--ty), calc(var(--z) * 1px)) rotateX(calc(var(--rx) * 1turn)) rotateY(calc(var(--ry) * 1turn)); }
+    }
+
+    @keyframes spin{
+      0% { transform: translate3d(var(--tx), var(--ty), calc(var(--z) * 1px)) rotateZ(0deg) rotateY(calc(var(--ry) * 1turn)); }
+      100% { transform: translate3d(var(--tx), var(--ty), calc(var(--z) * 1px)) rotateZ(360deg) rotateY(calc(var(--ry) * 1turn)); }
+    }
+
+    /* Subtle UI top-left: title and control */
+    .ui {
+      position: absolute;
+      left: 20px;
+      top: 18px;
+      display:flex;
+      gap:.6rem;
+      align-items:center;
+      z-index: 20;
+      color: rgba(255,255,255,0.95);
+      font-weight:600;
+      font-size: .95rem;
+      backdrop-filter: blur(6px);
+    }
+    .btn {
+      border: 0;
+      padding:.46rem .6rem;
+      border-radius:.5rem;
+      background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+      color: #fff;
+      cursor:pointer;
+      font-weight:600;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+    }
+    .btn:active { transform: translateY(1px); }
+
+    /* footer hint */
+    .hint {
+      position:absolute;
+      right:18px;
+      bottom:18px;
+      font-size:.85rem;
+      color:rgba(255,255,255,0.7);
+      z-index:20;
+    }
+
+    /* responsive */
+    @media (max-width:720px){
+      :root { --base-size: clamp(14px, 3.5vmin, 20px); }
+      .phrase::after { display:none; }
+      .ui { font-size:.85rem; gap:.4rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="scene" aria-hidden="false">
+    <div class="ui">
+      <div>I love you Zahira — ×100</div>
+      <button class="btn" id="toggleBtn" title="Pause / Resume animation">Pause</button>
+      <button class="btn" id="randomizeBtn" title="Randomize layout">Randomize</button>
+    </div>
+
+    <div class="ring" id="ring" role="presentation"></div>
+
+    <div class="hint">Move mouse / touch to tilt the scene • Press Pause to stop motion</div>
+  </div>
+
+  <script>
+    (function(){
+      const COUNT = 100;
+      const ring = document.getElementById('ring');
+      const rng = (a,b) => Math.random()*(b-a)+a;
+
+      // Create phrases
+      for(let i=0;i<COUNT;i++){
+        const el = document.createElement('div');
+        el.className = 'phrase';
+        el.style.setProperty('--i', i);
+        // random depth distribution across scene front-to-back
+        const z = Math.round(rng(-220, 420)); // px
+        el.style.setProperty('--z', z);
+        // random rotation seeds to keep subtle differences
+        const rx = rng(-0.06, 0.06).toFixed(4);
+        const ry = rng(-0.06, 0.06).toFixed(4);
+        el.style.setProperty('--rx', rx);
+        el.style.setProperty('--ry', ry);
+        // random offsets across entire screen
+        const tx = rng(-100, 100).toFixed(2) + 'vmin';
+        const ty = rng(-80, 80).toFixed(2) + 'vmin';
+        el.style.setProperty('--tx', tx);
+        el.style.setProperty('--ty', ty);
+        // subtle swing amplitudes
+        const sx = rng(-2,2).toFixed(2) + 'vmin';
+        const sy = rng(-1.6,1.6).toFixed(2) + 'vmin';
+        const sz = Math.round(rng(-22,42));
+        el.style.setProperty('--sx', sx);
+        el.style.setProperty('--sy', sy);
+        el.style.setProperty('--sz', sz);
+        // random animation seed
+        el.style.setProperty('--rand', Math.random().toFixed(4));
+        el.style.setProperty('--i', i);
+        // set content
+        const face = document.createElement('span');
+        face.className = 'face';
+        face.textContent = 'I love you Zahira';
+        const back = document.createElement('span');
+        back.className = 'back';
+        back.textContent = '';
+        el.appendChild(face);
+        el.appendChild(back);
+        // initial small transform so reveal looks nicer
+        const angle = (i / COUNT) * Math.PI * 2;
+        el.style.transform = `translate3d(${tx}, ${ty}, ${z}px) rotateY(${(angle*180/Math.PI).toFixed(2)}deg)`;
+        ring.appendChild(el);
+        // reveal with tiny stagger
+        (function(node, delay){
+          setTimeout(()=> node.classList.add('show'), delay);
+        })(el, i * 12);
+      }
+
+      // Interactivity to tilt scene with pointer
+      const scene = document.querySelector('.scene');
+      let paused = false;
+      const toggleBtn = document.getElementById('toggleBtn');
+      toggleBtn.addEventListener('click', ()=>{
+        paused = !paused;
+        document.querySelectorAll('.phrase').forEach(el=>{
+          el.style.animationPlayState = paused ? 'paused' : 'running';
+        });
+        toggleBtn.textContent = paused ? 'Resume' : 'Pause';
+      });
+
+      // Randomize positions on demand
+      const randomizeBtn = document.getElementById('randomizeBtn');
+      randomizeBtn.addEventListener('click', ()=>{
+        document.querySelectorAll('.phrase').forEach((el,i)=>{
+          const z = Math.round(rng(-220,420));
+          el.style.setProperty('--z', z);
+          el.style.setProperty('--tx', rng(-100,100).toFixed(2) + 'vmin');
+          el.style.setProperty('--ty', rng(-80,80).toFixed(2) + 'vmin');
+          el.style.setProperty('--sx', rng(-2,2).toFixed(2) + 'vmin');
+          el.style.setProperty('--sy', rng(-1.6,1.6).toFixed(2) + 'vmin');
+          el.style.setProperty('--sz', Math.round(rng(-22,42)));
+        });
+      });
+
+      // pointer-based tilt
+      let lastX = 0, lastY = 0;
+      function applyTilt(x,y){
+        const rect = scene.getBoundingClientRect();
+        const nx = (x - rect.left) / rect.width - 0.5;
+        const ny = (y - rect.top) / rect.height - 0.5;
+        const rotY = nx * 18; // degrees
+        const rotX = -ny * 12;
+        // apply to ring for parallax
+        ring.style.transform = `translateZ(-140px) rotateX(${rotX}deg) rotateY(${rotY}deg)`;
+      }
+
+      window.addEventListener('mousemove', e => {
+        applyTilt(e.clientX, e.clientY);
+      }, {passive:true});
+
+      // touch support
+      window.addEventListener('touchmove', e => {
+        if(e.touches && e.touches[0]){
+          applyTilt(e.touches[0].clientX, e.touches[0].clientY);
+        }
+      }, {passive:true});
+
+      // subtle autoslow motion when window not focused for battery friendliness
+      window.addEventListener('blur', ()=> {
+        document.querySelectorAll('.phrase').forEach(el => {
+          el.style.animationDuration = 'calc(var(--rand) * 30s + 25s)';
+        });
+      });
+      window.addEventListener('focus', ()=> {
+        document.querySelectorAll('.phrase').forEach(el => {
+          el.style.animationDuration = '';
+        });
+      });
+
+      // Accessibility: reduce motion respect
+      const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+      if(mq.matches){
+        document.querySelectorAll('.phrase').forEach(el=>{
+          el.style.animation = 'none';
+          el.style.transition = 'transform 600ms linear';
+          el.classList.add('show');
+        });
+        toggleBtn.style.display = 'none';
+      }
+
+    })();
+  </script>
+</body>
+</html>
